@@ -1,0 +1,42 @@
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:VERSION
+    ports:
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      - nginx-proxy
+    environment:
+      KAFKA_REST_ID: ""
+      KAFKA_REST_BOOTSTRAP_SERVERS: "SASL_PLAINTEXT://${KAFKA_HOSTNAME}:9093"
+      KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
+      KAFKA_REST_CONSUMER_REQUEST_MAX_BYTES: "67108864"
+      KAFKA_REST_CONSUMER_THREADS: "50"
+      KAFKA_REST_CONSUMER_REQUEST_TIMEOUT_MS: "1000"
+      KAFKA_REST_HOST_NAME: "${KAFKA_HOSTNAME}"
+      KAFKAREST_HEAP_OPTS: "-Xms512M -Xmx512M"
+      KAFKAREST_OPTS: "-Djava.security.auth.login.config=/etc/kafka-rest/rest-jaas.properties"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka-rest/rest-jaas.properties"
+      KAFKA_REST_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,HEAD,OPTIONS,DELETE"
+      KAFKA_REST_CLIENT_SECURITY_PROTOCOL: "SASL_PLAINTEXT"
+      KAFKA_REST_CLIENT_SASL_MECHANISM: "PLAIN"
+    volumes:
+     - '/home/$SSH_USER/configs/rest-jaas.properties:/etc/kafka-rest/rest-jaas.properties'
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "2"
+        max-size: "50m"
+        
+  nginx-proxy:
+    image: openresty/openresty:1.25.3.2-alpine
+    ports:
+      - "80:80"
+    restart: always
+    volumes:
+      - '/home/$SSH_USER/configs/nginx/conf.d:/etc/nginx/conf.d'
+      - '/home/$SSH_USER/configs/nginx/auth.basic:/etc/nginx/auth.basic'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "2"
+        max-size: "25m"
